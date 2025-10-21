@@ -1,0 +1,2 @@
+# Make Admin/index.php the default file in this directory
+DirectoryIndex Admin/index.php

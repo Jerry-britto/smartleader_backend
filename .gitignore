@@ -1,0 +1,23 @@
+# 1. Dependency Directory
+/vendor/
+
+# 2. Uploaded Assets
+/images/
+
+# 3. Runtime Generated Files
+common/sessions/*
+*.log
+error_log
+firebase/cron_log.txt
+
+# 4. Temporary/System Files
+.ftpquota
+.DS_Store
+delete-plan.php
+
+# 5. Third-party Dependencies
+PHPMailer/language/*
+Api/PHPMailer/language/*
+Admin/plugins/*
+
+firebase/FirebaseCredentials.json
