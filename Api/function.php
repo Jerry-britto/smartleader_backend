@@ -709,7 +709,8 @@ function get_active_subscription()
 		if ($valid_check) {
 			$message['message'] = $valid_check . " is empty";
 		} else {
-			$booking = mysqli_query($this->conn, "DELETE a,ast FROM add_team AS a LEFT JOIN add_sub_team AS ast ON a.id = ast.add_team_id WHERE a.id = '$team_id'");
+			$booking = mysqli_query($this->conn, "DELETE a,ast FROM add_team AS a LEFT JOIN add_sub_team AS ast ON a.team_id = ast.team_id WHERE a.team_id = '$team_id'");
+			// $booking = mysqli_query($this->conn, "DELETE a,ast FROM add_team AS a LEFT JOIN add_sub_team AS ast ON a.team_id = ast.team_id WHERE a.team_id = '$team_id'");
 			if ($booking) {
 				$message['message'] = " Successfully Deleted";
 			} else {
@@ -1057,27 +1058,65 @@ function update_actual_business_amount()
 		extract($_POST);
 		$validation = ['team_id' => $team_id,];
 		$valid_check = array_search(null, $validation);
+		$members = $this->get_sub_team_members_recursive($team_id);
 		if ($valid_check) {
 			$msz['message'] = $valid_check . " is Empty";
 			echo json_encode($msz);
 			die();
 		} else {
-			$deep = array();
-			$fetch = mysqli_query($this->conn, "SELECT * FROM `add_sub_team`  WHERE `team_id`='$team_id' ");
-			while ($fetch_cate = mysqli_fetch_assoc($fetch)) {
-				$fetch_cate['path'] = $this->path;
-				array_push($deep, $fetch_cate);
-			}
-			if ($fetch) {
-				$msz['data'] = $deep;
-				$msz['message'] = " Sub Team showing Is Successfully";
+			// $deep = array();
+			// $fetch = mysqli_query($this->conn, "SELECT * FROM `add_sub_team`  WHERE `team_id`='$team_id' ");
+			// while ($fetch_cate = mysqli_fetch_assoc($fetch)) {
+			// 	$fetch_cate['path'] = $this->path;
+			// 	array_push($deep, $fetch_cate);
+			// }
+			// if ($fetch) {
+			// 	$msz['data'] = $deep;
+			// 	$msz['message'] = " Sub Team showing Is Successfully";
+			// } else {
+			// 	$msz['message'] = "Faild To Show ";
+			// }
+			// echo json_encode($msz);
+			 if (!empty($members)) {
+				$msz = [
+					'data' => $members,
+					'message' => 'Sub Team Members Fetched Successfully'
+				];
 			} else {
-				$msz['message'] = "Faild To Show ";
+				$msz = [
+					'data' => [],
+					'message' => 'No Sub Team Members Found'
+				];
 			}
+
 			echo json_encode($msz);
 		}
 	}
 
+	function get_sub_team_members_recursive($team_id)
+	{
+		$deep = [];
+
+		$query = "SELECT * FROM `add_sub_team` WHERE `team_id`='" . mysqli_real_escape_string($this->conn, $team_id) . "'";
+		$fetch = mysqli_query($this->conn, $query);
+
+		while ($row = mysqli_fetch_assoc($fetch)) {
+			$row['path'] = $this->path;
+
+			// Recursively fetch sub-members using their unique member ID
+			$sub_members = $this->get_sub_team_members_recursive($row['member_unqiue_id']);
+
+			if (!empty($sub_members)) {
+				$row['sub_members'] = $sub_members;
+			} else {
+				$row['sub_members'] = [];
+			}
+
+			$deep[] = $row;
+		}
+
+		return $deep;
+	}
 	//-------------------------------------show_sub_team--------------------------------
 	function show_sub_team()
 	{
@@ -1201,6 +1240,7 @@ function update_actual_business_amount()
 	//---------------------------------add_sub_team--------------------------------
 	function add_sub_team()
 	{
+		error_reporting(0); // Disable PHP warnings
 		extract($_POST);
 		$valid = array(
 			'user_id' => $user_id,
@@ -1224,6 +1264,21 @@ function update_actual_business_amount()
 			////       $msz['message'] = "  User Already Exists";
 			////  }
 			//  else{
+			$test1 = mysqli_query($this->conn, "SELECT * FROM `add_sub_team` WHERE `member_unqiue_id`='$team_id'");
+$test2 = mysqli_query($this->conn, "SELECT * FROM `add_team` WHERE `team_id`='$team_id'");
+
+$row1 = mysqli_fetch_assoc($test1);
+$row2 = mysqli_fetch_assoc($test2);
+
+if (
+    ($row1 && ($row1['target_status'] == 1 || $row1['status'] == 1)) ||
+    ($row2 && ($row2['target_status'] == 1 || $row2['status'] == 1))
+) {
+    $msz['message'] = "Team Locked, Cannot add more members.";
+    $msz['status'] = "false";
+    echo json_encode($msz, JSON_UNESCAPED_UNICODE);
+    die;
+}
 			$check = mysqli_query($this->conn, "SELECT * FROM `add_team` WHERE `team_id`='$team_id'");
 			$check1 = mysqli_query($this->conn, "SELECT * FROM `add_sub_team` WHERE `member_unqiue_id`='$team_id' ");
 			$check2 = mysqli_query($this->conn, "SELECT * FROM `add_sub_team` WHERE `user_id`='$user_id' ");
