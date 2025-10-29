@@ -3478,21 +3478,22 @@ function show_static_folder()
 	//-------------------------------------terms_condition---------------------------
 	function terms_condition()
 	{
-		extract($_POST);
-		$valid = array();
-		if ($valid_check) {
-			$msz['message'] = $valid_check . " is empty";
-			echo json_encode($msz, JSON_UNESCAPED_UNICODE);
-			die;
-		} else {
-			$fetch = mysqli_fetch_assoc(mysqli_query($this->conn, "SELECT * FROM `terms_condition`"));
-			if ($fetch) {
-				$fetch['message'] = "Showing Terms Condition Successfully";
-			} else {
-				$fetch['message'] = "Faild To Show ";
-			}
-		}
-		echo json_encode($fetch);
+		header('Content-Type: text/html'); 
+	
+	    // Description column in the mysql table holds the html content
+	    $query = "SELECT description FROM `terms_condition` LIMIT 1";
+	    $result = mysqli_query($this->conn, $query);
+	    $fetch = mysqli_fetch_assoc($result);
+	
+	    if ($fetch && !empty($fetch['description'])) {
+	        // display termsn and conditions as plain html
+	        echo $fetch['description']; 
+	    } else {
+	        // Fallback HTML error message
+	        echo "<h1>Error</h1><p>Terms and conditions content not found.</p>";
+	    }
+	    
+	    die;
 	}
 	//-----------------------------------------show About-----------------------------
 	function About_us()
