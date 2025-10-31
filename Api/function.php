@@ -1025,33 +1025,56 @@ function update_actual_business_amount()
 
 	//-------------------------------------new_show_sub_team--------------------------------
 	function new_show_sub_team()
-	{
-		extract($_POST);
-		$validation = [
-			'user_id' => $user_id,
-		];
-		$valid_check = array_search(null, $validation);
-		if ($valid_check) {
-			$msz['message'] = $valid_check . " is Empty";
-			echo json_encode($msz);
-			die();
-		} else {
-			$deep = array();
-			$fetch = mysqli_query($this->conn, "SELECT * FROM `add_sub_team`  WHERE `user_id`='$user_id' ");
-			while ($fetch_cate = mysqli_fetch_assoc($fetch)) {
-				$fetch_cate['path'] = $this->path;
-				array_push($deep, $fetch_cate);
-			}
-			if ($fetch) {
-				$msz['data'] = $deep;
-				$msz['message'] = " Sub Team showing Is Successfully";
-			} else {
-				$msz['message'] = "Faild To Show ";
-			}
-			echo json_encode($msz);
-		}
-	}
+    {
+    extract($_POST);
+    $validation = [
+        'user_id' => $user_id,
+    ];
+    $valid_check = array_search(null, $validation);
+    if ($valid_check) {
+        $msz['message'] = $valid_check . " is Empty";
+        echo json_encode($msz);
+        die();
+    } else {
+        $deep = array();
 
+        $fetch = mysqli_query($this->conn, "SELECT * FROM `add_sub_team` WHERE `user_id`='$user_id' ");
+        while ($fetch_cate = mysqli_fetch_assoc($fetch)) {
+
+            // Default branch_name as empty
+            $branch_name = '';
+
+            // Step 1: Get branch_id from add_team table
+            $add_team_id = $fetch_cate['add_team_id'];
+            $team_query = mysqli_query($this->conn, "SELECT `branch_id` FROM `add_team` WHERE `id`='$add_team_id' LIMIT 1");
+            if ($team_query && mysqli_num_rows($team_query) > 0) {
+                $team_row = mysqli_fetch_assoc($team_query);
+                $branch_id = $team_row['branch_id'];
+
+                // Step 2: Get branch_name from branch_table
+                $branch_query = mysqli_query($this->conn, "SELECT `btanch_name` FROM `add_branch` WHERE `id`='$branch_id' LIMIT 1");
+                if ($branch_query && mysqli_num_rows($branch_query) > 0) {
+                    $branch_row = mysqli_fetch_assoc($branch_query);
+                    $branch_name = $branch_row['btanch_name'];
+                }
+            }
+
+            // Add path and branch_name to result
+            $fetch_cate['path'] = $this->path;
+            $fetch_cate['branch_name'] = $branch_name;
+
+            array_push($deep, $fetch_cate);
+        }
+
+        if ($fetch) {
+            $msz['data'] = $deep;
+            $msz['message'] = "Sub Team showing Successfully";
+        } else {
+            $msz['message'] = "Failed To Show";
+        }
+        echo json_encode($msz);
+    }
+}
 	//-------------------------------------show_sub_team_member--------------------------------
 	function show_sub_team_member()
 	{
